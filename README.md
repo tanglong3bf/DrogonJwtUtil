@@ -1,6 +1,6 @@
 # JwtUtil
 
-A simple JWT (JSON Web Token) generator and verifier for [Drogon](https:github.com/drogonframework/drogon)(C++ web framework).
+A simple JWT (JSON Web Token) generator and verifier for [Drogon](https://github.com/drogonframework/drogon)(C++ web framework).
 
 # How to use
 
@@ -17,7 +17,8 @@ $ tree .
 ├── config.json
 ├── main.cc
 └── plugins
-    └── tl_jwt
+    └── tl
+        └── jwt
 ```
 
 And then, copy all files in the src directory to the new subdirectory.
@@ -31,15 +32,26 @@ $ tree .
 ├── config.json
 ├── main.cc
 └── plugins
-    └── tl_jwt
-        ├── JwtUtil.cc
-        └── JwtUtil.h
+    └── tl
+        └── jwt
+            ├── JwtUtil.cc
+            └── JwtUtil.h
 ```
 
 Finally, modify the CMakeLists.txt file of the drogon project so that this plugin can be compiled into the project.
 
 ```cmake
-add_subdirectory(plugins/tl_jwt)
+# ...
+aux_source_directory(plugins/tl/jwt JWT_SRC)
+# ...
+target_sources(${PROJECT_NAME}
+               PRIVATE
+               ${SRC_DIR}
+               ${CTL_SRC}
+               ${FILTER_SRC}
+               ${PLUGIN_SRC}
+               ${MODEL_SRC}
+               ${JWT_SRC})
 ```
 
 ## config
@@ -62,7 +74,7 @@ plugins:
         exp: 1800
         # nbf: not before time in seconds, if it is negative, means not set this field to payload. -1 by default.
         nbf: -1
-        # jti: JWT ID, if it is false, means not set this field to payload. false by default.
+        # jti: JWT ID, if it is false, means not set this field to payload. If it is true, the UUID will be used to generate the jti field. False by default.
         jti: false
 ```
 
@@ -84,7 +96,7 @@ In the config.json file of the drogon project, add the following configuration:
                 "exp": 1800,
                 // nbf: not before time in seconds, if it is negative, means not set this field to payload. -1 by default.
                 "nbf": -1,
-                // jti: JWT ID, if it is false, means not set this field to payload. false by default.
+                // jti: JWT ID, if it is false, means not set this field to payload. If it is true, the UUID will be used to generate the jti field. False by default.
                 "jti": false
             }
         }
@@ -111,7 +123,7 @@ drogon::app().registerBeginningAdvice([]() {
     }
     else
     {
-        LOG_ERROR << result.first;
+        LOG_ERROR << tl::jwt::to_string(result.first);
     }
 });
 ```

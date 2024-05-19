@@ -9,17 +9,21 @@
 
 TEST(TestToString, Test)
 {
-    EXPECT_STREQ("Ok", to_string(tl::jwt::Ok).c_str());
-    EXPECT_STREQ("InvalidToken", to_string(tl::jwt::InvalidToken).c_str());
+    EXPECT_STREQ("Ok", tl::jwt::to_string(tl::jwt::Ok).c_str());
+    EXPECT_STREQ("InvalidToken",
+                 tl::jwt::to_string(tl::jwt::InvalidToken).c_str());
     EXPECT_STREQ("InvalidSignature",
-                 to_string(tl::jwt::InvalidSignature).c_str());
-    EXPECT_STREQ("InvalidHeader", to_string(tl::jwt::InvalidHeader).c_str());
+                 tl::jwt::to_string(tl::jwt::InvalidSignature).c_str());
+    EXPECT_STREQ("InvalidHeader",
+                 tl::jwt::to_string(tl::jwt::InvalidHeader).c_str());
     EXPECT_STREQ("InvalidAlgorithm",
-                 to_string(tl::jwt::InvalidAlgorithm).c_str());
-    EXPECT_STREQ("InvalidPayload", to_string(tl::jwt::InvalidPayload).c_str());
+                 tl::jwt::to_string(tl::jwt::InvalidAlgorithm).c_str());
+    EXPECT_STREQ("InvalidPayload",
+                 tl::jwt::to_string(tl::jwt::InvalidPayload).c_str());
     EXPECT_STREQ("InvalidNotBefore",
-                 to_string(tl::jwt::InvalidNotBefore).c_str());
-    EXPECT_STREQ("ExpiredToken", to_string(tl::jwt::ExpiredToken).c_str());
+                 tl::jwt::to_string(tl::jwt::InvalidNotBefore).c_str());
+    EXPECT_STREQ("ExpiredToken",
+                 tl::jwt::to_string(tl::jwt::ExpiredToken).c_str());
 }
 
 TEST(TestInitAndStart, WithoutConfig)
