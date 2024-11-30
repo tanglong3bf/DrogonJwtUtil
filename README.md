@@ -108,23 +108,33 @@ In the config.json file of the drogon project, add the following configuration:
 # examples
 
 ```cpp
-drogon::app().registerBeginningAdvice([]() {
-    auto jwtUtil = drogon::app().getPlugin<tl::jwt::JwtUtil>();
+// using namespace ::drogon;
+// using namespace ::tl::jwt;
+// set secret key
+app().registerBeginningAdvice([] {
+     JwtUtil jwtUtil = app().getPlugin<JwtUtil>();
+     // tanglong3bf
+     jwtUtil.setSecret(utils::base64Decode("dGFuZ2xvbmczYmY="));
+});
+
+// generate and verify JWT token
+app().registerBeginningAdvice([] {
+    auto jwtUtil = app().getPlugin<JwtUtil>();
 
     Json::Value data;
     data["user_id"] = 1;
     data["role"] = "admin";
     auto jwt = jwtUtil->encode(data);  // std::string
     LOG_INFO << "jwt: " << jwt;
-    auto result = jwtUtil->decode(jwt);
-    if (result.first == tl::jwt::Ok)
+    auto result = jwtUtil->decode(jwt); // pair<Result, shared_ptr<Json::Value>>
+    if (result.first == Ok)
     {
         LOG_INFO << "decode success";
         LOG_INFO << result.second->toStyledString();
     }
     else
     {
-        LOG_ERROR << tl::jwt::to_string(result.first);
+        LOG_ERROR << ::tl::jwt::to_string(result.first);
     }
 });
 ```

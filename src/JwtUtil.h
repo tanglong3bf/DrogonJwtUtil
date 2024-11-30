@@ -60,13 +60,6 @@ inline std::string to_string(Result result)
 class JwtUtil : public drogon::Plugin<JwtUtil>
 {
   public:
-    /**
-     * @brief You can set secret_ in the constructor, for example:
-     * @code
-     *     // tanglong3bf
-     *     this->secret_ = drogon::utils::base64Decode("dGFuZ2xvbmczYmY=");
-     * @endcode
-     */
     JwtUtil()
     {
     }
@@ -74,6 +67,29 @@ class JwtUtil : public drogon::Plugin<JwtUtil>
     /// This method must be called by drogon to initialize and start the plugin.
     /// It must be implemented by the user.
     void initAndStart(const Json::Value& config) override;
+
+    /**
+     * @brief the method is used to set the secret key for encoding and decoding
+     * jwt. users should call this method after calling the app().run() method.
+     * etc. use the beginning advice of AOP. This will overwtite the settings in
+     * the config file.
+     * @author tanglong3bf
+     * @date 2024-12-01
+     * @param [in] secret New secret key.
+     * @code
+     * // using namespace ::drogon;
+     * // using namespace ::tl::jwt;
+     * app().registerBeginningAdvice([] {
+     *     JwtUtil jwtUtil = app().getPlugin<JwtUtil>();
+     *     // tanglong3bf
+     *     jwtUtil.setSecret(drogon::utils::base64Decode("dGFuZ2xvbmczYmY="));
+     * })
+     * @endcode
+     */
+    void setSecret(const std::string& secret)
+    {
+        secret_ = secret;
+    }
 
     /**
      * @brief encode jwt
