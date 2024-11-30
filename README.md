@@ -61,9 +61,9 @@ In the config.yaml file of the drogon project, add the following configuration:
 ```yaml
 plugins:
   - name: tl::jwt::JwtUtil
-    # secret: The secret key used to sign and verify JWT tokens. NOT SUGGESTED to set in config file.
-    secret: tanglong3bf
     config:
+      # secret: The secret key used to sign and verify JWT tokens. NOT SUGGESTED to set in config file.
+      secret: your_secret_key
       # iat is MUST NOT set. It will be set in code automatically.
       payload:
         # three string fields are not necessary.
@@ -87,6 +87,7 @@ In the config.json file of the drogon project, add the following configuration:
         "config": {
             // secret: The secret key used to sign and verify JWT tokens. NOT SUGGESTED to set in config file.
             "secret": "your_secret_key",
+            // iat is MUST NOT set. It will be set in code automatically.
             "payload": {
                 // three string fields are not necessary.
                 "iss": "tanglong3bf",
