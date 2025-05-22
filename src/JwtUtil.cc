@@ -1,10 +1,7 @@
 /**
  * @file JwtUtil.cc
- * @brief A Drogon Plugin for JWT
- * @author tanglong3bf
- * @version 0.0.1
- * @date 2024-05-19
- * @copyright Copyright (c) 2024 tanglong3bf
+ *
+ * @copyright Copyright (c) 2024 - 2025 tanglong3bf
  * @license MIT License
  */
 
@@ -17,6 +14,10 @@ using namespace ::trantor::utils;
 
 using namespace ::tl::jwt;
 
+/**
+ * @date 2024-05-19
+ * @since v0.0.1
+ */
 string hmacSha256Encode(std::string secret, string payload)
 {
     string result;
@@ -68,6 +69,10 @@ string hmacSha256Encode(std::string secret, string payload)
     return base64Encode(hash2.bytes, 32, true, false);
 }
 
+/**
+ * @date 2024-05-19
+ * @since v0.0.1
+ */
 #define CHECK_AND_SET_S(key)                                             \
     if (payloadJson.isMember(#key))                                      \
     {                                                                    \

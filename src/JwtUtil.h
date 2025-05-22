@@ -1,10 +1,12 @@
 /**
  * @file JwtUtil.h
  * @brief A Drogon Plugin for JWT
+ *
  * @author tanglong3bf
- * @version 0.0.1
- * @date 2024-05-19
- * @copyright Copyright (c) 2024 tanglong3bf
+ * @date 2024-12-01
+ * @version v0.1.0
+ *
+ * @copyright Copyright (c) 2024 - 2025 tanglong3bf
  * @license MIT License
  */
 
@@ -28,6 +30,10 @@ enum Result
     ExpiredToken,      ///< token is expired
 };
 
+/**
+ * @date 2024-05-19
+ * @since v0.0.1
+ */
 inline std::string to_string(Result result)
 {
     switch (result)
@@ -53,9 +59,8 @@ inline std::string to_string(Result result)
 }
 
 /**
- * @brief JWT Util
- * @author tanglong3bf
  * @date 2024-05-19
+ * @since v0.0.1
  */
 class JwtUtil : public drogon::Plugin<JwtUtil>
 {
@@ -64,8 +69,10 @@ class JwtUtil : public drogon::Plugin<JwtUtil>
     {
     }
 
-    /// This method must be called by drogon to initialize and start the plugin.
-    /// It must be implemented by the user.
+    /**
+     * @date 2024-05-19
+     * @since v0.0.1
+     */
     void initAndStart(const Json::Value& config) override;
 
     /**
@@ -85,6 +92,9 @@ class JwtUtil : public drogon::Plugin<JwtUtil>
      *     jwtUtil.setSecret(drogon::utils::base64Decode("dGFuZ2xvbmczYmY="));
      * })
      * @endcode
+     *
+     * @date 2024-12-01
+     * @since v0.1.0
      */
     void setSecret(const std::string& secret)
     {
@@ -96,6 +106,9 @@ class JwtUtil : public drogon::Plugin<JwtUtil>
      * @param [in] data The payload to be encoded. If the payload contains the
      * "iat", "exp", "nbf", ... fields, they may be overriden.
      * @return The encoded jwt string.
+     *
+     * @date 2024-05-19
+     * @since v0.0.1
      */
     std::string encode(const Json::Value& data);
 
@@ -108,12 +121,17 @@ class JwtUtil : public drogon::Plugin<JwtUtil>
      *   @retval Ok Decode success and payload is valid.
      *   @retval others Decode failed, see Result.
      * @see Result
+     *
+     * @date 2024-05-19
+     * @since v0.0.1
      */
     std::pair<Result, std::shared_ptr<Json::Value>> decode(
         const std::string& token);
 
-    /// This method must be called by drogon to shutdown the plugin.
-    /// It must be implemented by the user.
+    /**
+     * @date 2024-05-19
+     * @since v0.0.1
+     */
     void shutdown() override;
 
   private:
