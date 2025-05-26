@@ -35,7 +35,8 @@ $ tree .
     └── tl
         └── jwt
             ├── JwtUtil.cc
-            └── JwtUtil.h
+            ├── JwtUtil.h
+            └── sha2.h
 ```
 
 Finally, modify the CMakeLists.txt file of the drogon project so that this plugin can be compiled into the project.
@@ -62,19 +63,27 @@ In the config.yaml file of the drogon project, add the following configuration:
 plugins:
   - name: tl::jwt::JwtUtil
     config:
-      # secret: The secret key used to sign and verify JWT tokens. NOT SUGGESTED to set in config file.
+      # secret: The secret key used to sign and verify JWT tokens. NOT
+      # SUGGESTED to set in config file.
       secret: your_secret_key
+      # alg: The algorithm used to sign and verify JWT tokens. HS256 by default.
+      # Supported algorithms: HS256(default), HS384, HS512
+      alg: HS256
       # iat is MUST NOT set. It will be set in code automatically.
       payload:
         # three string fields are not necessary.
         iss: tanglong3bf
         sub: demo
         aud: visitor
-        # exp: expired time in seconds, if it is negative, means always not expired. 1800 by default.
+        # exp: expired time in seconds, if it is negative, means always not
+        # expired. 1800 by default.
         exp: 1800
-        # nbf: not before time in seconds, if it is negative, means not set this field to payload. -1 by default.
+        # nbf: not before time in seconds, if it is negative, means not set this
+        # field to payload. -1 by default.
         nbf: -1
-        # jti: JWT ID, if it is false, means not set this field to payload. If it is true, the UUID will be used to generate the jti field. False by default.
+        # jti: JWT ID, if it is false, means not set this field to payload. If
+        # it is true, the UUID will be used to generate the jti field. False by
+        # default.
         jti: false
 ```
 
@@ -85,19 +94,28 @@ In the config.json file of the drogon project, add the following configuration:
     {
         "name": "tl::jwt::JwtUtil",
         "config": {
-            // secret: The secret key used to sign and verify JWT tokens. NOT SUGGESTED to set in config file.
+            // secret: The secret key used to sign and verify JWT tokens. NOT
+            // SUGGESTED to set in config file.
             "secret": "your_secret_key",
+            // alg: The algorithm used to sign and verify JWT tokens. HS256 by
+            // default.
+            // Supported algorithms: HS256(default), HS384, HS512
+            "alg": "HS256",
             // iat is MUST NOT set. It will be set in code automatically.
             "payload": {
                 // three string fields are not necessary.
                 "iss": "tanglong3bf",
                 "sub": "demo",
                 "aud": "visitor",
-                // exp: expired time in seconds, if it is negative, means always not expired. 1800 by default.
+                // exp: expired time in seconds, if it is negative, means always
+                // not expired. 1800 by default.
                 "exp": 1800,
-                // nbf: not before time in seconds, if it is negative, means not set this field to payload. -1 by default.
+                // nbf: not before time in seconds, if it is negative, means not
+                // set this field to payload. -1 by default.
                 "nbf": -1,
-                // jti: JWT ID, if it is false, means not set this field to payload. If it is true, the UUID will be used to generate the jti field. False by default.
+                // jti: JWT ID, if it is false, means not set this field to
+                // payload. If it is true, the UUID will be used to generate the
+                // jti field. False by default.
                 "jti": false
             }
         }
@@ -108,13 +126,14 @@ In the config.json file of the drogon project, add the following configuration:
 # examples
 
 ```cpp
-// using namespace ::drogon;
-// using namespace ::tl::jwt;
+// using namespace drogon;
+// using namespace drogon::utils;
+// using namespace tl::jwt;
 // set secret key
 app().registerBeginningAdvice([] {
      JwtUtil jwtUtil = app().getPlugin<JwtUtil>();
      // tanglong3bf
-     jwtUtil.setSecret(utils::base64Decode("dGFuZ2xvbmczYmY="));
+     jwtUtil.setSecret(base64Decode("dGFuZ2xvbmczYmY="));
 });
 
 // generate and verify JWT token
@@ -124,9 +143,13 @@ app().registerBeginningAdvice([] {
     Json::Value data;
     data["user_id"] = 1;
     data["role"] = "admin";
-    auto jwt = jwtUtil->encode(data);  // std::string
+
+    // std::string
+    auto jwt = jwtUtil->encode(data);
     LOG_INFO << "jwt: " << jwt;
-    auto result = jwtUtil->decode(jwt); // pair<Result, shared_ptr<Json::Value>>
+
+    // std::pair<Result, shared_ptr<Json::Value>>
+    auto result = jwtUtil->decode(jwt);
     if (result.first == Ok)
     {
         LOG_INFO << "decode success";
@@ -134,7 +157,7 @@ app().registerBeginningAdvice([] {
     }
     else
     {
-        LOG_ERROR << ::tl::jwt::to_string(result.first);
+        LOG_ERROR << toString(result.first);
     }
 });
 ```

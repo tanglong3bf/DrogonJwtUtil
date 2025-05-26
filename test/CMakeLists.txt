@@ -36,6 +36,6 @@ target_sources(${PROJECT_NAME}
                ${PLUGIN_SRC})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE gtest)
-SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fprofile-arcs -ftest-coverage -fno-inline -g3 -O0")
+SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_GLIBCXX_DEBUG -fprofile-arcs -ftest-coverage -fno-inline -g3 -O0")
 
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/logs)

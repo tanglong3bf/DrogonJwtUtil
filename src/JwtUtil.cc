@@ -7,78 +7,70 @@
 
 #include "JwtUtil.h"
 #include <drogon/utils/Utilities.h>
+#include "sha2.h"
 
-using namespace ::std;
-using namespace ::drogon::utils;
-using namespace ::trantor::utils;
+using namespace std;
+using namespace drogon::utils;
 
-using namespace ::tl::jwt;
+using namespace tl::jwt;
 
-/**
- * @date 2024-05-19
- * @since v0.0.1
- */
-string hmacSha256Encode(std::string secret, string payload)
+inline function<string(const string&)> getHashFunc(Algorithm alg)
 {
-    string result;
+    switch (alg)
+    {
+        case HS256:
+            return sha2::sha256;
+        case HS384:
+            return sha2::sha384;
+        case HS512:
+            return sha2::sha512;
+    }
+}
 
+string hmacEncode(const string& secret,
+                  const string& headerAndPayload,
+                  Algorithm alg)
+{
+    auto hashFunc = getHashFunc(alg);
     // pre processing of the key
-    string K;
-    if (secret.size() > 64)
+    string K = secret;
+    if ((alg == HS256 && secret.size() > 64) || secret.size() > 128)
     {
-        K = getSha256(secret.data(), secret.size());
+        K = hashFunc(secret);
     }
-    else
+    if (alg == HS256 && K.size() < 64)
     {
-        K = secret;
+        K.resize(64, '\0');
     }
-    if (K.size() < 64)
+    else if (K.size() < 128)
     {
-        K.resize(64);
+        K.resize(128, '\0');
     }
 
-    string ipadkey;
-    ipadkey.resize(64);
+    // Create ipadkey and opadkey
+    string ipadkey(K.size(), '\0');
+    string opadkey(K.size(), '\0');
+
     transform(K.begin(), K.end(), ipadkey.begin(), [](const auto c) -> char {
         return c ^ 0x36;
     });
-
-    string opadkey;
-    opadkey.resize(64);
     transform(K.begin(), K.end(), opadkey.begin(), [](const auto c) -> char {
         return c ^ 0x5c;
     });
 
-    // ipadkey + payload
-    string temp1;
-    temp1.resize(64 + payload.size());
-    copy(ipadkey.begin(), ipadkey.end(), temp1.begin());
-    copy(payload.begin(), payload.end(), temp1.begin() + 64);
+    // hash(ipadkey + headerAndPayload)
+    auto hash1 = hashFunc(ipadkey + headerAndPayload);
 
-    // sha256(ipadkey + payload)
-    auto hash1 = sha256(temp1.data(), temp1.size());
-
-    // opadkey + sha256(ipadkey + payload)
-    string temp2;
-    temp2.resize(96);
-    copy(opadkey.begin(), opadkey.end(), temp2.begin());
-    copy(hash1.bytes, hash1.bytes + 32, temp2.begin() + opadkey.size());
-
-    // sha256(opadkey + sha256(ipadkey + payload))
-    auto hash2 = sha256(temp2.data(), temp2.size());
-    return base64Encode(hash2.bytes, 32, true, false);
+    // hash(opadkey + hash(ipadkey + headerAndPayload))
+    auto hash2 = hashFunc(opadkey + hash1);
+    return base64Encode(hash2, true, false);
 }
 
-/**
- * @date 2024-05-19
- * @since v0.0.1
- */
-#define CHECK_AND_SET_S(key)                                             \
-    if (payloadJson.isMember(#key))                                      \
-    {                                                                    \
-        assert(payloadJson[#key].isString());                            \
-        this->key##_ =                                                   \
-            std::make_shared<std::string>(payloadJson[#key].asString()); \
+#define CHECK_AND_SET_S(key)                                              \
+    if (payloadJson.isMember(#key))                                       \
+    {                                                                     \
+        assert(payloadJson[#key].isString());                             \
+        this->key##_ = make_shared<string>(payloadJson[#key].asString()); \
     }
 
 void JwtUtil::initAndStart(const Json::Value& config)
@@ -88,6 +80,25 @@ void JwtUtil::initAndStart(const Json::Value& config)
         assert(config["secret"].isString());
         LOG_WARN << "NOT SUGGEST to use secret in config file.";
         secret_ = config["secret"].asString();
+    }
+
+    if (config.isMember("alg"))
+    {
+        assert(config["alg"].isString());
+        try
+        {
+            alg_ = fromString(config["alg"].asString());
+        }
+        catch (const out_of_range& e)
+        {
+            LOG_ERROR << "Invalid algorithm: " << config["alg"].asString();
+            LOG_ERROR << "Supported algorithms: HS256, HS384, HS512.";
+            exit(1);
+        }
+    }
+    else
+    {
+        alg_ = HS256;
     }
 
     if (!config.isMember("payload"))
@@ -128,7 +139,7 @@ void JwtUtil::initAndStart(const Json::Value& config)
 
 string JwtUtil::encode(const Json::Value& data)
 {
-    auto result = this->base64Header_;
+    auto result = base64HeaderList.at(this->alg_);
 
     Json::Value payload;
     payload = data;
@@ -145,7 +156,7 @@ string JwtUtil::encode(const Json::Value& data)
         payload["aud"] = *this->aud_;
     }
     // get current time
-    auto iat = std::time(nullptr);
+    auto iat = time(nullptr);
     payload["iat"] = iat;
     if (this->exp_ >= 0)
     {
@@ -167,7 +178,8 @@ string JwtUtil::encode(const Json::Value& data)
     auto payloadBase64 = drogon::utils::base64Encode(payloadStr, true, false);
     result += '.' + payloadBase64;
 
-    auto signature = hmacSha256Encode(this->secret_, result);
+    auto signature = hmacEncode(this->secret_, result, this->alg_);
+
     result += '.' + signature;
 
     return result;
@@ -185,24 +197,30 @@ pair<Result, shared_ptr<Json::Value>> JwtUtil::decode(const string& token)
     auto payload = parts[1];
     auto signature = parts[2];
 
+    Json::CharReaderBuilder builder;
+    auto reader = unique_ptr<Json::CharReader>(builder.newCharReader());
+
     // check header
-    if (header != this->base64Header_)
+    if (header != base64HeaderList.at(alg_))
     {
         auto headerStr = base64Decode(header);
         // string to Json::Value
         Json::Value headerValue;
-        Json::Reader reader;
-        if (!reader.parse(headerStr, headerValue))
+        if (!reader->parse(headerStr.data(),
+                           headerStr.data() + headerStr.size(),
+                           &headerValue,
+                           nullptr))
         {
             return {InvalidHeader, nullptr};
         }
-        if (!headerValue.isMember("alg") || headerValue["alg"] != "HS256")
+        if (!headerValue.isMember("alg") || headerValue["alg"] != alg_)
         {
             return {InvalidAlgorithm, nullptr};
         }
     }
 
-    if (signature != hmacSha256Encode(this->secret_, header + '.' + payload))
+    if (signature !=
+        hmacEncode(this->secret_, header + '.' + payload, this->alg_))
     {
         return {InvalidSignature, nullptr};
     }
@@ -212,13 +230,15 @@ pair<Result, shared_ptr<Json::Value>> JwtUtil::decode(const string& token)
     auto payloadValue = make_shared<Json::Value>();
 
     // string to Json::Value
-    Json::Reader reader;
-    reader.parse(payloadStr, *payloadValue);
+    reader->parse(payloadStr.data(),
+                  payloadStr.data() + payloadStr.size(),
+                  payloadValue.get(),
+                  nullptr);
 
     if (payloadValue->isMember("exp") && (*payloadValue)["exp"].isInt())
     {
         auto exp = (*payloadValue)["exp"].asInt();
-        auto now = std::time(nullptr);
+        auto now = time(nullptr);
         if (exp < now)
         {
             return {ExpiredToken, nullptr};
@@ -230,7 +250,7 @@ pair<Result, shared_ptr<Json::Value>> JwtUtil::decode(const string& token)
     if (payloadValue->isMember("nbf") && (*payloadValue)["nbf"].isInt())
     {
         auto nbf = (*payloadValue)["nbf"].asInt();
-        auto now = std::time(nullptr);
+        auto now = time(nullptr);
         if (nbf > now)
         {
             return {InvalidNotBefore, nullptr};

@@ -3,8 +3,8 @@
  * @brief A Drogon Plugin for JWT
  *
  * @author tanglong3bf
- * @date 2024-12-01
- * @version v0.1.0
+ * @date 2025-05-26
+ * @version v0.2.0
  *
  * @copyright Copyright (c) 2024 - 2025 tanglong3bf
  * @license MIT License
@@ -31,10 +31,10 @@ enum Result
 };
 
 /**
- * @date 2024-05-19
+ * @date 2025-05-26
  * @since v0.0.1
  */
-inline std::string to_string(Result result)
+inline std::string toString(Result result)
 {
     switch (result)
     {
@@ -59,9 +59,48 @@ inline std::string to_string(Result result)
 }
 
 /**
- * @date 2024-05-19
- * @since v0.0.1
+ * @brief The supported algorithms for encoding and decoding jwt.
+ *
+ * @date 2025-05-26
+ * @since v0.2.0
  */
+enum Algorithm
+{
+    HS256,
+    HS384,
+    HS512
+};
+
+/**
+ * @brief
+ *
+ * @date 2025-05-26
+ * @since v0.2.0
+ */
+inline Algorithm fromString(const std::string& str)
+{
+    if (str == "HS256")
+    {
+        return HS256;
+    }
+    else if (str == "HS384")
+    {
+        return HS384;
+    }
+    else if (str == "HS512")
+    {
+        return HS512;
+    }
+    LOG_ERROR << "Invalid algorithm: " << str;
+    throw std::invalid_argument("Invalid algorithm");
+}
+
+const std::unordered_map<Algorithm, std::string> base64HeaderList{
+    {HS256, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"},
+    {HS384, "eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9"},
+    {HS512, "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9"},
+};
+
 class JwtUtil : public drogon::Plugin<JwtUtil>
 {
   public:
@@ -70,7 +109,7 @@ class JwtUtil : public drogon::Plugin<JwtUtil>
     }
 
     /**
-     * @date 2024-05-19
+     * @date 2025-05-26
      * @since v0.0.1
      */
     void initAndStart(const Json::Value& config) override;
@@ -80,9 +119,9 @@ class JwtUtil : public drogon::Plugin<JwtUtil>
      * jwt. users should call this method after calling the app().run() method.
      * etc. use the beginning advice of AOP. This will overwtite the settings in
      * the config file.
-     * @author tanglong3bf
-     * @date 2024-12-01
-     * @param [in] secret New secret key.
+     *
+     * @param secret New secret key.
+     *
      * @code
      * // using namespace ::drogon;
      * // using namespace ::tl::jwt;
@@ -103,41 +142,41 @@ class JwtUtil : public drogon::Plugin<JwtUtil>
 
     /**
      * @brief encode jwt
-     * @param [in] data The payload to be encoded. If the payload contains the
+     *
+     * @param data The payload to be encoded. If the payload contains the
      * "iat", "exp", "nbf", ... fields, they may be overriden.
+     *
      * @return The encoded jwt string.
      *
-     * @date 2024-05-19
+     * @date 2025-05-26
      * @since v0.0.1
      */
     std::string encode(const Json::Value& data);
 
     /**
      * @brief decode jwt
-     * @param [in] token The jwt string to be decoded.
+     *
+     * @param token The jwt string to be decoded.
+     *
      * @return A pair of Result and the payload. If the Result is Ok, the
      * payload is valid. The iat, exp, nbf, ... fields will be removed from the
      * payload.
      *   @retval Ok Decode success and payload is valid.
      *   @retval others Decode failed, see Result.
+     *
      * @see Result
      *
-     * @date 2024-05-19
+     * @date 2025-05-26
      * @since v0.0.1
      */
     std::pair<Result, std::shared_ptr<Json::Value>> decode(
         const std::string& token);
 
-    /**
-     * @date 2024-05-19
-     * @since v0.0.1
-     */
     void shutdown() override;
 
   private:
     std::string secret_;
-    /// header: {"alg":"HS256","typ":"JWT"}
-    const std::string base64Header_{"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"};
+    Algorithm alg_;
     // payload
     std::shared_ptr<std::string> iss_;
     std::shared_ptr<std::string> sub_;
